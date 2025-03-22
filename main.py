@@ -49,10 +49,7 @@ class Bee(pygame.sprite.Sprite):
 
     def update(self):
         global score
-        if score > 30:
-            k = 3
-        else:
-            k = 1
+        k = score // 30 + 1
         if self.vector == 'left' and self.x - 2 > 10:
             self.x -= 3 * k
         elif self.vector == 'left' and self.x - 2 <= 10:
