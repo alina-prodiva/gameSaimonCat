@@ -1,0 +1,222 @@
+import random
+import pygame
+from pygame import mixer
+import os, sys
+
+
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+GREY = (128, 128, 128)
+SIZE = WIDTH, HEIGHT = 800, 600
+FPS = 60
+score = 0
+num_bees = 6
+
+
+def load_image(name, colorkey=None):
+    fullname = os.path.join('data', name)
+    if not os.path.isfile(fullname):
+        print(f"Файл с изображением '{fullname}' не найден")
+        sys.exit()
+    image = pygame.image.load(fullname)
+    return image
+
+
+class Camera:
+    def __init__(self):
+        self.dx = 0
+        self.dy = 0
+
+    def apply(self, obj):
+        obj.rect.x += self.dx
+        obj.rect.y += self.dy
+
+    def update(self, target):
+        self.dx = -(target.rect.x + target.rect.w // 2 - WIDTH // 2)
+        self.dy = -(target.rect.y + target.rect.h // 2 - HEIGHT // 2)
+
+
+class Bee(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__(all_sprites)
+        self.add(all_bees)
+        self.x, self.y = x, y
+        self.image = pygame.transform.scale(load_image('leftbee.png'), (45, 45))
+        self.rect = pygame.Rect(x, y, 45, 45)
+        self.vector = 'left'
+
+    def update(self):
+        if self.vector == 'left' and self.x - 2 > 10:
+            self.x -= 3
+        elif self.vector == 'left' and self.x - 2 <= 10:
+            self.image = pygame.transform.scale(load_image('rightbee.png'), (45, 45))
+            self.vector = 'right'
+            self.x += 3
+        elif self.vector == 'right' and self.x + 2 < WIDTH - 50:
+            self.x += 3
+        elif self.vector == 'right' and self.x + 2 >= WIDTH - 50:
+            self.image = pygame.transform.scale(load_image('leftbee.png'), (45, 45))
+            self.vector = 'left'
+            self.x -= 3
+        self.y += random.randint(-5, 5)
+        self.rect = pygame.Rect(self.x, self.y, 45, 45)
+
+
+class Cat(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__(all_sprites)
+        self.x, self.y = x, y
+        self.vector = 'left'
+        self.image = pygame.transform.scale(load_image('leftcat.png'), (150, 100))
+        self.rect = pygame.Rect(x, y, 150, 100)
+
+    def arrow_move(self, vector):
+        if vector == 'left' and self.y == 480:
+            self.vector = 'left'
+            self.image = pygame.transform.scale(load_image('leftcat.png'), (150, 100))
+            self.x -= 10
+            self.rect = pygame.Rect(self.x, self.y, 150, 100)
+        elif vector == 'right' and self.y == 480:
+            self.vector = 'right'
+            self.image = pygame.transform.scale(load_image('rightcat.png'), (150, 100))
+            self.x += 10
+            self.rect = pygame.Rect(self.x, self.y, 150, 100)
+        elif vector == 'left' and self.vector == 'right' and self.y < 480:
+            self.vector = 'left'
+            self.image = pygame.transform.scale(load_image('leftcatup.png'), (100, 200))
+            self.x -= 10
+            self.rect = pygame.Rect(self.x, self.y, 100, 200)
+        elif vector == 'right' and self.vector == 'left' and self.y < 480:
+            self.vector = 'right'
+            self.image = pygame.transform.scale(load_image('rightcatup.png'), (100, 200))
+            self.x += 10
+            self.rect = pygame.Rect(self.x, self.y, 100, 200)
+        elif vector == 'up' and self.vector == 'left':
+            self.image = pygame.transform.scale(load_image('leftcatup.png'), (100, 200))
+            if self.y - 100 > 0:
+                self.y -= 100
+            self.x -= 10
+            self.rect = pygame.Rect(self.x, self.y, 100, 200)
+        elif vector == 'up' and self.vector == 'right':
+            self.image = pygame.transform.scale(load_image('rightcatup.png'), (100, 200))
+            if self.y - 100 > 0:
+                self.y -= 100
+            self.x += 10
+            self.rect = pygame.Rect(self.x, self.y, 100, 200)
+
+    def update(self):
+        global score
+        if self.y <= 400:
+            self.y += 10
+            self.rect = pygame.Rect(self.x, self.y, 100, 200)
+        else:
+            self.y = 480
+            if self.vector == 'left':
+                self.image = pygame.transform.scale(load_image('leftcat.png'), (150, 100))
+            else:
+                self.image = pygame.transform.scale(load_image('rightcat.png'), (150, 100))
+            self.rect = pygame.Rect(self.x, self.y, 100, 200)
+        for bee in all_bees:
+            if pygame.sprite.collide_mask(self, bee):
+                bee.remove(all_bees)
+                bee.kill()
+                score += 1
+
+
+def game_over():
+    intro_text = ["Конец игры", "Заработано очков: " + str(score)]
+    clock = pygame.time.Clock()
+    fon = pygame.transform.scale(load_image('final.jpg'), (WIDTH, HEIGHT))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 50)
+    text_coord = 50
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('black'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 20
+        intro_rect.top = text_coord
+        intro_rect.x = 250
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+        pygame.display.flip()
+        clock.tick(FPS)
+
+def start_screen():
+    intro_text = ["Начать игру"]
+    clock = pygame.time.Clock()
+    fon = pygame.transform.scale(load_image('start.jpg'), (WIDTH, HEIGHT))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 50)
+    text_coord = 500
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('black'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 50
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                game_over()
+            elif event.type == pygame.KEYDOWN or \
+                    event.type == pygame.MOUSEBUTTONDOWN:
+                return
+        pygame.display.flip()
+        clock.tick(FPS)
+
+if __name__ == '__main__':
+    pygame.init()
+    pygame.display.set_caption('Игра "Кот Саймона"')
+    screen = pygame.display.set_mode(SIZE)
+    icon = pygame.image.load('data/catfoot.ico')
+    pygame.display.set_icon(icon)
+    mixer.music.load("data/sunshine.wav")
+    mixer.music.play(-1)
+    start_screen()
+    background = pygame.transform.scale(load_image('background.jpg'), (WIDTH, HEIGHT))
+    screen.blit(background, (0, 0))
+    font = pygame.font.Font('freesansbold.ttf', 32)
+    camera = Camera()
+    running = True
+    all_sprites, all_bees = pygame.sprite.Group(), pygame.sprite.Group()
+    clock = pygame.time.Clock()
+    cat = Cat(400, 480)
+    for _ in range(num_bees):
+        Bee(random.randint(50, WIDTH - 50), random.randint(50, 300))
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                game_over()
+                running = False
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]:
+            cat.arrow_move('left')
+        if keys[pygame.K_RIGHT]:
+            cat.arrow_move('right')
+        if keys[pygame.K_UP]:
+            cat.arrow_move('up')
+        clock.tick(FPS)
+        if len(all_bees) < num_bees:
+            Bee(random.randint(50, WIDTH - 50), random.randint(50, 300))
+        all_sprites.update()
+        all_bees.update()
+        camera.update(cat)
+        screen.fill(BLACK)
+        background = pygame.transform.scale(load_image('background.jpg'), (WIDTH, HEIGHT))
+        screen.blit(background, (0, 0))
+        score_text = font.render("Score : " + str(score), 1, WHITE)
+        intro_rect = score_text.get_rect()
+        intro_rect.top = 10
+        intro_rect.x = 10
+        screen.blit(score_text, intro_rect)
+        all_sprites.draw(screen)
+        pygame.display.flip()
