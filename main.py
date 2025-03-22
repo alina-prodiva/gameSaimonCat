@@ -48,18 +48,23 @@ class Bee(pygame.sprite.Sprite):
         self.vector = 'left'
 
     def update(self):
+        global score
+        if score > 30:
+            k = 3
+        else:
+            k = 1
         if self.vector == 'left' and self.x - 2 > 10:
-            self.x -= 3
+            self.x -= 3 * k
         elif self.vector == 'left' and self.x - 2 <= 10:
             self.image = pygame.transform.scale(load_image('rightbee.png'), (45, 45))
             self.vector = 'right'
-            self.x += 3
+            self.x += 3 * k
         elif self.vector == 'right' and self.x + 2 < WIDTH - 50:
-            self.x += 3
+            self.x += 3 * k
         elif self.vector == 'right' and self.x + 2 >= WIDTH - 50:
             self.image = pygame.transform.scale(load_image('leftbee.png'), (45, 45))
             self.vector = 'left'
-            self.x -= 3
+            self.x -= 3 * k
         self.y += random.randint(-5, 5)
         self.rect = pygame.Rect(self.x, self.y, 45, 45)
 
@@ -109,7 +114,7 @@ class Cat(pygame.sprite.Sprite):
     def update(self):
         global score
         if self.y <= 400:
-            self.y += 10
+            self.y += 20
             self.rect = pygame.Rect(self.x, self.y, 100, 200)
         else:
             self.y = 480
