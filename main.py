@@ -16,6 +16,7 @@ num_bees = 6
 
 
 def load_image(name, colorkey=None):
+    # функция загрузки изображения
     fullname = os.path.join('data', name)
     if not os.path.isfile(fullname):
         print(f"Файл с изображением '{fullname}' не найден")
@@ -24,7 +25,7 @@ def load_image(name, colorkey=None):
     return image
 
 
-class Camera:
+class Camera:  # на самом деле в данном игре камера не нужна, но добавим на будущее развитие
     def __init__(self):
         self.dx = 0
         self.dy = 0
@@ -38,18 +39,19 @@ class Camera:
         self.dy = -(target.rect.y + target.rect.h // 2 - HEIGHT // 2)
 
 
-class Bee(pygame.sprite.Sprite):
+class Bee(pygame.sprite.Sprite):  # Модель пчелки, добавляем в обе группы спрайтов
     def __init__(self, x, y):
         super().__init__(all_sprites)
-        self.add(all_bees)
+        self.add(all_bees)  # по данной группе будем отслеживать столкновения кота по маске
         self.x, self.y = x, y
         self.image = pygame.transform.scale(load_image('leftbee.png'), (45, 45))
         self.rect = pygame.Rect(x, y, 45, 45)
-        self.vector = 'left'
+        self.vector = 'left'  # задаем начальное направление
 
     def update(self):
         global score
-        k = score // 30 + 1
+        k = score // 30 + 1  # ускорение движения пчелок через каждые 30 очков
+        # изменение положения пчелы в зависимости от направления движения
         if self.vector == 'left' and self.x - 2 > 10:
             self.x -= 3 * k
         elif self.vector == 'left' and self.x - 2 <= 10:
@@ -62,11 +64,11 @@ class Bee(pygame.sprite.Sprite):
             self.image = pygame.transform.scale(load_image('leftbee.png'), (45, 45))
             self.vector = 'left'
             self.x -= 3 * k
-        self.y += random.randint(-5, 5)
+        self.y += random.randint(-5, 5)  # чтобы было больше похоже на полет пчелы добавим дрожание по вертикали
         self.rect = pygame.Rect(self.x, self.y, 45, 45)
 
 
-class Cat(pygame.sprite.Sprite):
+class Cat(pygame.sprite.Sprite):  # Модель кота
     def __init__(self, x, y):
         super().__init__(all_sprites)
         self.x, self.y = x, y
@@ -74,7 +76,7 @@ class Cat(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(load_image('leftcat.png'), (150, 100))
         self.rect = pygame.Rect(x, y, 150, 100)
 
-    def arrow_move(self, vector):
+    def arrow_move(self, vector):  # перемещения кота в зависимости от нажатой стрелки
         if vector == 'left' and self.y == 480:
             self.vector = 'left'
             self.image = pygame.transform.scale(load_image('leftcat.png'), (150, 100))
@@ -110,6 +112,7 @@ class Cat(pygame.sprite.Sprite):
 
     def update(self):
         global score
+        # после каждого прыжка кота возвращаем на место
         if self.y <= 400:
             self.y += 20
             self.rect = pygame.Rect(self.x, self.y, 100, 200)
@@ -120,14 +123,14 @@ class Cat(pygame.sprite.Sprite):
             else:
                 self.image = pygame.transform.scale(load_image('rightcat.png'), (150, 100))
             self.rect = pygame.Rect(self.x, self.y, 100, 200)
-        for bee in all_bees:
+        for bee in all_bees:  # проходим по группе пчел для мониторинга столкновений
             if pygame.sprite.collide_mask(self, bee):
                 bee.remove(all_bees)
                 bee.kill()
-                score += 1
+                score += 1  # за каждую "убитую" пчелу + 1 очко
 
 
-def game_over():
+def game_over():  # завершающий экран, показывает очки за игру
     intro_text = ["Конец игры", "Заработано очков: " + str(score)]
     clock = pygame.time.Clock()
     fon = pygame.transform.scale(load_image('final.jpg'), (WIDTH, HEIGHT))
@@ -150,7 +153,7 @@ def game_over():
         pygame.display.flip()
         clock.tick(FPS)
 
-def start_screen():
+def start_screen():  # начальная заставка
     intro_text = ["Начать игру"]
     clock = pygame.time.Clock()
     fon = pygame.transform.scale(load_image('start.jpg'), (WIDTH, HEIGHT))
@@ -179,27 +182,27 @@ if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('Игра "Кот Саймона"')
     screen = pygame.display.set_mode(SIZE)
-    icon = pygame.image.load('data/catfoot.ico')
+    icon = pygame.image.load('data/catfoot.ico')  # загрузка иконки для окна
     pygame.display.set_icon(icon)
-    mixer.music.load("data/sunshine.wav")
+    mixer.music.load("data/sunshine.wav")  # загрузка музыки
     mixer.music.play(-1)
-    start_screen()
+    start_screen()  # запуск начальной заставки
     background = pygame.transform.scale(load_image('background.jpg'), (WIDTH, HEIGHT))
-    screen.blit(background, (0, 0))
+    screen.blit(background, (0, 0))  # установили задний фон
     font = pygame.font.Font('freesansbold.ttf', 32)
-    camera = Camera()
+    camera = Camera()  # запустили камеру
     running = True
     all_sprites, all_bees = pygame.sprite.Group(), pygame.sprite.Group()
     clock = pygame.time.Clock()
-    cat = Cat(400, 480)
-    for _ in range(num_bees):
+    cat = Cat(400, 480)  # создали игрока кота
+    for _ in range(num_bees):  # создали пчелок
         Bee(random.randint(50, WIDTH - 50), random.randint(50, 300))
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 game_over()
                 running = False
-        keys = pygame.key.get_pressed()
+        keys = pygame.key.get_pressed()  # отслеживаем нажатия клавиш, управление игроком стрелками
         if keys[pygame.K_LEFT]:
             cat.arrow_move('left')
         if keys[pygame.K_RIGHT]:
@@ -207,18 +210,18 @@ if __name__ == '__main__':
         if keys[pygame.K_UP]:
             cat.arrow_move('up')
         clock.tick(FPS)
-        if len(all_bees) < num_bees:
+        if len(all_bees) < num_bees:  # пополняем количество пчелок, если какие-то убиты
             Bee(random.randint(50, WIDTH - 50), random.randint(50, 300))
         all_sprites.update()
         all_bees.update()
         camera.update(cat)
-        screen.fill(BLACK)
+        screen.fill(BLACK)  # обновляем после каждого кадра фон, чтобы не было следов движения
         background = pygame.transform.scale(load_image('background.jpg'), (WIDTH, HEIGHT))
         screen.blit(background, (0, 0))
-        score_text = font.render("Score : " + str(score), 1, WHITE)
+        score_text = font.render("Score : " + str(score), 1, WHITE)  # ведем запись очков
         intro_rect = score_text.get_rect()
         intro_rect.top = 10
         intro_rect.x = 10
         screen.blit(score_text, intro_rect)
-        all_sprites.draw(screen)
+        all_sprites.draw(screen)  # после каждого обновления кадра восстанавливаем всех спрайтов
         pygame.display.flip()
