@@ -69,6 +69,8 @@ class Bee(pygame.sprite.Sprite):
             self.vector = 'left'
             self.x -= 3 * k
         self.y += random.randint(-5, 5)  # чтобы было больше похоже на полет пчелы добавим дрожание по вертикали
+        while not 40 < self.y < 350:
+            self.y += random.randint(-5, 5)
         self.rect = pygame.Rect(self.x, self.y, 45, 45)
 
 class Fly(pygame.sprite.Sprite):
@@ -99,6 +101,8 @@ class Fly(pygame.sprite.Sprite):
             self.vector = 'left'
             self.x -= 2 * k
         self.y += random.randint(-5, 5)  # чтобы было больше похоже на полет мухи добавим дрожание по вертикали
+        while not 40 < self.y < 350:
+            self.y += random.randint(-5, 5)
         self.rect = pygame.Rect(self.x, self.y, 45, 45)
 
 
@@ -152,6 +156,17 @@ class Cat(pygame.sprite.Sprite):
             if self.x + 10 < WIDTH - 150:
                 self.x += 10
             self.rect = pygame.Rect(self.x, self.y, 100, 200)
+        elif vector == 'up' and self.vector == '':
+            self.vector = 'right'
+            self.image = pygame.transform.scale(load_image('rightcatup.png'), (100, 200))
+            if self.x + 10 < WIDTH - 150:
+                self.x += 10
+            self.rect = pygame.Rect(self.x, self.y, 100, 200)
+        elif vector == 'down':
+            self.vector = ''
+            self.y = 480
+            self.image = pygame.transform.scale(load_image('sleepcat.png'), (220, 100))
+            self.rect = pygame.Rect(self.x, self.y, 220, 100)
 
     def update(self):
         global score
@@ -163,7 +178,7 @@ class Cat(pygame.sprite.Sprite):
             self.y = 480
             if self.vector == 'left':
                 self.image = pygame.transform.scale(load_image('leftcat.png'), (150, 100))
-            else:
+            elif self.vector == 'right':
                 self.image = pygame.transform.scale(load_image('rightcat.png'), (150, 100))
             self.rect = pygame.Rect(self.x, self.y, 100, 200)
         for bee in all_bees:  # проходим по группе пчел для мониторинга столкновений
@@ -265,6 +280,8 @@ if __name__ == '__main__':
             cat.arrow_move('right')
         if keys[pygame.K_UP]:
             cat.arrow_move('up')
+        if keys[pygame.K_DOWN]:
+            cat.arrow_move('down')
         clock.tick(FPS)
         if len(all_bees) < num_bees:  # пополняем количество пчелок, если какие-то убиты
             Bee(random.randint(50, WIDTH - 50), random.randint(50, 300))
