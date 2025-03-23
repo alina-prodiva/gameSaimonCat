@@ -13,6 +13,7 @@ SIZE = WIDTH, HEIGHT = 800, 600
 FPS = 60
 score = 0
 num_bees = 6
+num_flies = 2
 
 
 def load_image(name, colorkey=None):
@@ -25,7 +26,8 @@ def load_image(name, colorkey=None):
     return image
 
 
-class Camera:  # на самом деле в данном игре камера не нужна, но добавим на будущее развитие
+class Camera:
+    # Модель камеры для фокуса на игроке
     def __init__(self):
         self.dx = 0
         self.dy = 0
@@ -39,11 +41,13 @@ class Camera:  # на самом деле в данном игре камера 
         self.dy = -(target.rect.y + target.rect.h // 2 - HEIGHT // 2)
 
 
-class Bee(pygame.sprite.Sprite):  # Модель пчелки, добавляем в обе группы спрайтов
+class Bee(pygame.sprite.Sprite):
+    # Модель пчелки, добавляем в обе группы спрайтов
     def __init__(self, x, y):
         super().__init__(all_sprites)
         self.add(all_bees)  # по данной группе будем отслеживать столкновения кота по маске
-        self.x, self.y = x, y
+        self.x = x
+        self.y = y
         self.image = pygame.transform.scale(load_image('leftbee.png'), (45, 45))
         self.rect = pygame.Rect(x, y, 45, 45)
         self.vector = 'left'  # задаем начальное направление
@@ -67,47 +71,86 @@ class Bee(pygame.sprite.Sprite):  # Модель пчелки, добавляе�
         self.y += random.randint(-5, 5)  # чтобы было больше похоже на полет пчелы добавим дрожание по вертикали
         self.rect = pygame.Rect(self.x, self.y, 45, 45)
 
-
-class Cat(pygame.sprite.Sprite):  # Модель кота
+class Fly(pygame.sprite.Sprite):
+    # Модель мухи, добавляем в обе группы спрайтов
     def __init__(self, x, y):
         super().__init__(all_sprites)
-        self.x, self.y = x, y
+        self.add(all_flies)  # по данной группе будем отслеживать столкновения кота по маске
+        self.x = x
+        self.y = y
+        self.image = pygame.transform.scale(load_image('leftfly.png'), (45, 45))
+        self.rect = pygame.Rect(x, y, 45, 45)
+        self.vector = 'left'  # задаем начальное направление
+
+    def update(self):
+        global score
+        k = score // 30 + 1  # ускорение движения пчелок через каждые 30 очков
+        # изменение положения пчелы в зависимости от направления движения
+        if self.vector == 'left' and self.x - 2 > 10:
+            self.x -= 2 * k
+        elif self.vector == 'left' and self.x - 2 <= 10:
+            self.image = pygame.transform.scale(load_image('rightfly.png'), (45, 45))
+            self.vector = 'right'
+            self.x += 2 * k
+        elif self.vector == 'right' and self.x + 2 < WIDTH - 50:
+            self.x += 2 * k
+        elif self.vector == 'right' and self.x + 2 >= WIDTH - 50:
+            self.image = pygame.transform.scale(load_image('leftfly.png'), (45, 45))
+            self.vector = 'left'
+            self.x -= 2 * k
+        self.y += random.randint(-5, 5)  # чтобы было больше похоже на полет мухи добавим дрожание по вертикали
+        self.rect = pygame.Rect(self.x, self.y, 45, 45)
+
+
+class Cat(pygame.sprite.Sprite):
+    # Модель кота - главного игрока
+    def __init__(self, x, y):
+        super().__init__(all_sprites)
+        self.x = x
+        self.y = y
         self.vector = 'left'
         self.image = pygame.transform.scale(load_image('leftcat.png'), (150, 100))
         self.rect = pygame.Rect(x, y, 150, 100)
 
-    def arrow_move(self, vector):  # перемещения кота в зависимости от нажатой стрелки
+    def arrow_move(self, vector):
+        # перемещения кота в зависимости от нажатой стрелки
         if vector == 'left' and self.y == 480:
             self.vector = 'left'
             self.image = pygame.transform.scale(load_image('leftcat.png'), (150, 100))
-            self.x -= 10
+            if self.x - 10 > 10:
+                self.x -= 10
             self.rect = pygame.Rect(self.x, self.y, 150, 100)
         elif vector == 'right' and self.y == 480:
             self.vector = 'right'
             self.image = pygame.transform.scale(load_image('rightcat.png'), (150, 100))
-            self.x += 10
+            if self.x + 10 < WIDTH - 150:
+                self.x += 10
             self.rect = pygame.Rect(self.x, self.y, 150, 100)
         elif vector == 'left' and self.vector == 'right' and self.y < 480:
             self.vector = 'left'
             self.image = pygame.transform.scale(load_image('leftcatup.png'), (100, 200))
-            self.x -= 10
+            if self.x - 10 > 10:
+                self.x -= 10
             self.rect = pygame.Rect(self.x, self.y, 100, 200)
         elif vector == 'right' and self.vector == 'left' and self.y < 480:
             self.vector = 'right'
             self.image = pygame.transform.scale(load_image('rightcatup.png'), (100, 200))
-            self.x += 10
+            if self.x + 10 < WIDTH - 150:
+                self.x += 10
             self.rect = pygame.Rect(self.x, self.y, 100, 200)
         elif vector == 'up' and self.vector == 'left':
             self.image = pygame.transform.scale(load_image('leftcatup.png'), (100, 200))
             if self.y - 100 > 0:
                 self.y -= 100
-            self.x -= 10
+            if self.x - 10 > 10:
+                self.x -= 10
             self.rect = pygame.Rect(self.x, self.y, 100, 200)
         elif vector == 'up' and self.vector == 'right':
             self.image = pygame.transform.scale(load_image('rightcatup.png'), (100, 200))
             if self.y - 100 > 0:
                 self.y -= 100
-            self.x += 10
+            if self.x + 10 < WIDTH - 150:
+                self.x += 10
             self.rect = pygame.Rect(self.x, self.y, 100, 200)
 
     def update(self):
@@ -128,6 +171,14 @@ class Cat(pygame.sprite.Sprite):  # Модель кота
                 bee.remove(all_bees)
                 bee.kill()
                 score += 1  # за каждую "убитую" пчелу + 1 очко
+        for fly in all_flies:  # проходим по группе мух для мониторинга столкновений
+            if pygame.sprite.collide_mask(self, fly):
+                fly.remove(all_flies)
+                fly.kill()
+                if score - 5 > 0:
+                    score -= 5  # за каждую "убитую" муху - 5 очко
+                else:
+                    score = 0
 
 
 def game_over():  # завершающий экран, показывает очки за игру
@@ -138,7 +189,7 @@ def game_over():  # завершающий экран, показывает оч
     font = pygame.font.Font(None, 50)
     text_coord = 50
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('black'))
+        string_rendered = font.render(line, 1, BLACK)
         intro_rect = string_rendered.get_rect()
         text_coord += 20
         intro_rect.top = text_coord
@@ -154,14 +205,14 @@ def game_over():  # завершающий экран, показывает оч
         clock.tick(FPS)
 
 def start_screen():  # начальная заставка
-    intro_text = ["Начать игру"]
+    intro_text = ["Начать игру", "Только не лови мух!"]
     clock = pygame.time.Clock()
     fon = pygame.transform.scale(load_image('start.jpg'), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 50)
-    text_coord = 500
+    text_coord = 450
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('black'))
+        string_rendered = font.render(line, 1, BLACK)
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
@@ -192,17 +243,22 @@ if __name__ == '__main__':
     font = pygame.font.Font('freesansbold.ttf', 32)
     camera = Camera()  # запустили камеру
     running = True
-    all_sprites, all_bees = pygame.sprite.Group(), pygame.sprite.Group()
+    all_sprites = pygame.sprite.Group()
+    all_bees = pygame.sprite.Group()
+    all_flies = pygame.sprite.Group()
     clock = pygame.time.Clock()
     cat = Cat(400, 480)  # создали игрока кота
     for _ in range(num_bees):  # создали пчелок
         Bee(random.randint(50, WIDTH - 50), random.randint(50, 300))
+    for _ in range(num_flies):  # создали мух
+        Fly(random.randint(50, WIDTH - 50), random.randint(50, 300))
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 game_over()
                 running = False
-        keys = pygame.key.get_pressed()  # отслеживаем нажатия клавиш, управление игроком стрелками
+        keys = pygame.key.get_pressed()
+        # отслеживаем нажатия клавиш, управление игроком стрелками
         if keys[pygame.K_LEFT]:
             cat.arrow_move('left')
         if keys[pygame.K_RIGHT]:
@@ -212,8 +268,11 @@ if __name__ == '__main__':
         clock.tick(FPS)
         if len(all_bees) < num_bees:  # пополняем количество пчелок, если какие-то убиты
             Bee(random.randint(50, WIDTH - 50), random.randint(50, 300))
+        if len(all_flies) < num_flies:  # пополняем количество мух, если какие-то убиты
+            Fly(random.randint(50, WIDTH - 50), random.randint(50, 300))
         all_sprites.update()
         all_bees.update()
+        all_flies.update()
         camera.update(cat)
         screen.fill(BLACK)  # обновляем после каждого кадра фон, чтобы не было следов движения
         background = pygame.transform.scale(load_image('background.jpg'), (WIDTH, HEIGHT))
